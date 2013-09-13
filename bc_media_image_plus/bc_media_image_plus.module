@@ -1,0 +1,67 @@
+<?php
+
+/**
+ * Implements hook_file_formatter_info().
+ */
+function bc_media_image_plus_file_formatter_info() {
+	return array(
+		'file_image_display' => array(
+			'label' => t('Image (+)'),
+			'field types' => array('image'),
+			'settings callback' => 'bc_media_image_plus_file_formatter_file_image_display_settings',
+			'view callback' => 'bc_media_image_plus_file_formatte_file_image_display_view',
+			'settings' => array(
+				'alt' => '[file:field_file_image_alt_text]',
+				'title' => '[file:field_file_image_title_text]',
+				'link_to' => 0,
+				'image_style' => '',
+			)
+		),
+	);
+}
+
+/**
+ * Implements hook_file_formatter_FORMATTER_settings().
+ */
+function bc_media_image_plus_file_formatter_file_image_display_settings($form, &$form_state, $settings) {
+	
+	$element = file_entity_file_formatter_file_image_settings($form, $form_state, $settings);
+	
+	$element['link_to'] = array(
+	  '#options' =>  array( 0 => t('No Link') , 1 => t('Link to file'), 2 => t('Link to entity') , 3 => t('Link to referenced entity')),
+	  '#type' => 'select',
+	  '#default_value' => $settings['link_to']
+	);
+
+	return $element ;
+}
+
+
+/**
+ * hook_file_formatter_FORMATTER_view().
+ */
+function bc_media_image_plus_file_formatte_file_image_display_view($file, $display, $langcode) {
+	$element = file_entity_file_formatter_file_image_view($file, $display, $langcode) ;
+	$settings = $display['settings'];
+	
+	if ( $settings['link_to'] == 3 && isset($file->referencing_entity) && isset($file->referencing_entity->nid) ) {
+		$output = drupal_render($element);
+		$element = array();
+		$element['content']['#type'] = 'markup';
+		$element['content']['#markup'] = l($output,'node/' . $file->referencing_entity->nid, array('html' => true ) ) ;
+
+	} elseif ( $settings['link_to'] == 2 ) {
+		$output = drupal_render($element);
+		$element = array();
+		$element['content']['#type'] = 'markup';
+		$element['content']['#markup'] = l($output,'file/' . $file->fid, array('html' => true ) ) ;
+		
+	} elseif ( $settings['link_to'] == 1 ) {
+		$output = drupal_render($element);
+		$element = array();
+		$element['content']['#type'] = 'markup';
+		$element['content']['#markup'] = l($output, file_create_url($file->uri), array('html' => true ) ) ;
+		
+	}
+	return $element;
+}

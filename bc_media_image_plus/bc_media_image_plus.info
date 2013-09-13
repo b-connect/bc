@@ -1,0 +1,4 @@
+name = Media Image Plus
+description = Provides enhancements
+package = Media
+core = 7.x
