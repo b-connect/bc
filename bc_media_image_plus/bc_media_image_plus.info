@@ -2,3 +2,6 @@ name = Media Image Plus
 description = Provides enhancements
 package = Media
 core = 7.x
+
+dependencies[] = file_entity
+dependencies[] = ds

@@ -13,6 +13,7 @@ function bc_media_image_plus_file_formatter_info() {
 			'settings' => array(
 				'alt' => '[file:field_file_image_alt_text]',
 				'title' => '[file:field_file_image_title_text]',
+				'html_caption'  => '' ,
 				'link_to' => 0,
 				'image_style' => '',
 			)
@@ -27,9 +28,16 @@ function bc_media_image_plus_file_formatter_file_image_display_settings($form, &
 	
 	$element = file_entity_file_formatter_file_image_settings($form, $form_state, $settings);
 	
+	$element['html_caption'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Set html caption'),
+		'#default_value' => $settings['html_caption']
+	);
+
 	$element['link_to'] = array(
 	  '#options' =>  array( 0 => t('No Link') , 1 => t('Link to file'), 2 => t('Link to entity') , 3 => t('Link to referenced entity')),
 	  '#type' => 'select',
+	  '#title' => t('Link file to content'),
 	  '#default_value' => $settings['link_to']
 	);
 
@@ -43,25 +51,31 @@ function bc_media_image_plus_file_formatter_file_image_display_settings($form, &
 function bc_media_image_plus_file_formatte_file_image_display_view($file, $display, $langcode) {
 	$element = file_entity_file_formatter_file_image_view($file, $display, $langcode) ;
 	$settings = $display['settings'];
+
+	$output = drupal_render($element);
+	$element = array();
+	$replace_options = array(
+	  'clear' => TRUE,
+	  'sanitize' => FALSE,
+	);
 	
 	if ( $settings['link_to'] == 3 && isset($file->referencing_entity) && isset($file->referencing_entity->nid) ) {
-		$output = drupal_render($element);
-		$element = array();
 		$element['content']['#type'] = 'markup';
 		$element['content']['#markup'] = l($output,'node/' . $file->referencing_entity->nid, array('html' => true ) ) ;
-
 	} elseif ( $settings['link_to'] == 2 ) {
-		$output = drupal_render($element);
-		$element = array();
 		$element['content']['#type'] = 'markup';
 		$element['content']['#markup'] = l($output,'file/' . $file->fid, array('html' => true ) ) ;
-		
-	} elseif ( $settings['link_to'] == 1 ) {
-		$output = drupal_render($element);
-		$element = array();
+	} elseif ( $settings['link_to'] == 1 ) {		
 		$element['content']['#type'] = 'markup';
 		$element['content']['#markup'] = l($output, file_create_url($file->uri), array('html' => true ) ) ;
-		
+	} else {
+		$element['content']['#type'] = 'markup';
+		$element['content']['#markup'] = $output;
 	}
+	
+	if ( $settings['html_caption'] ) {
+		$element['content']['#suffix'] = '<span class="caption">' . token_replace($settings['html_caption'], array('file' => $file), $replace_options) . '</span>';
+	}
+
 	return $element;
 }
